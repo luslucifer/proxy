@@ -38,7 +38,7 @@ app.get<{}, MessageResponse>('/:link', async (req: Request, res: Response) => {
     var data:|BufferSource = response.data;
 
     // Handle the response based on whether the link ends with .m3u8
-    const host = 'http://'+req.headers.host
+    const host = 'https://'+req.hostname
     
     if (decodedLink.endsWith('.m3u8')) {
       console.log('This is a .m3u8 link');
