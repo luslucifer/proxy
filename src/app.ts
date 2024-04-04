@@ -6,8 +6,10 @@ import cors from 'cors';
 import * as middlewares from './middlewares';
 import api from './api';
 import MessageResponse from './interfaces/MessageResponse';
+import {createProxyMiddleware} from 'http-proxy-middleware'
 
 import axios from 'axios'
+
 
 require('dotenv').config();
 
@@ -27,7 +29,7 @@ const headers = {
 
 
 app.get('/',(req,res)=>{
-  res.send('i am up')
+  res.send('i am samir')
 })
 app.get<{}, MessageResponse>('/:link', async (req: Request, res: Response) => {
   const link: string = req.params.link;
@@ -36,29 +38,49 @@ app.get<{}, MessageResponse>('/:link', async (req: Request, res: Response) => {
   console.log(decodedLink);
   console.log(decodedLink.endsWith('.m3u8'));
 
+
   try {
     // Use the decodedLink in your axios request
     const response = await axios.get(decodedLink, { headers: headers,responseType:'arraybuffer' });
     var data:|BufferSource = response.data;
+    const host = 'https://'+req.hostname+'/'
 
+    const pattern = /\/h\/list/    
     // Handle the response based on whether the link ends with .m3u8
-    const host = 'https://'+req.hostname
+    console.log('fuck fuck ' + pattern.test(decodedLink)) 
     
-    if (decodedLink.endsWith('.m3u8')) {
-      console.log('This is a .m3u8 link');
+    
+    if (decodedLink.endsWith('.m3u8') && !pattern.test(decodedLink)) {
       let data2 = textDecoder.decode(data)
       let splited = data2.split('\n')
+      console.log('This is a .m3u8 link');
       splited.map((str,index)=>{
         const trimed = str.trim()
         if(trimed.startsWith('https://')){
           let decoded = encodeURIComponent(trimed)
-          splited[index] = host+'/'+decoded
+          splited[index] = host+decoded
           
         }
       })
       // console.log(splited)
       const joined = splited.join('\n')
       res.send(joined)
+    }
+    else if(pattern.test(decodedLink)){
+      let splited = decodedLink.split(/\/list/)
+      let hostLink:string = host+ encodeURIComponent(splited[0]+'/').trim()
+      let data2 = textDecoder.decode(data)
+      let splitedLines = data2.split('\n')
+
+      splitedLines.map((line,index)=>{
+        if(line.trim().endsWith('.m3u8')){
+          splitedLines[index] = hostLink+encodeURIComponent(line)
+        }
+      })
+      let joined = splitedLines.join('\n')
+      res.send(joined) 
+
+
     }
     else{
       res.send(data);
@@ -69,6 +91,7 @@ app.get<{}, MessageResponse>('/:link', async (req: Request, res: Response) => {
     // Handle errors
     res.status(500).send('Internal Server Error');
   }
+  // res.send(link)
 });
 
 app.use('/api/v1', api);
@@ -77,3 +100,4 @@ app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
 
 export default app;
+ 
