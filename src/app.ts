@@ -25,6 +25,10 @@ const headers = {
   Referer:'https://e69975b881.nl/'
 };
 
+
+app.get('/',(req,res)=>{
+  res.send('i am up')
+})
 app.get<{}, MessageResponse>('/:link', async (req: Request, res: Response) => {
   const link: string = req.params.link;
   const decodedLink: string = decodeURIComponent(link.trim()); // Decode the entire link
